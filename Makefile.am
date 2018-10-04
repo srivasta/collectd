@@ -1013,6 +1013,21 @@ fscache_la_SOURCES = src/fscache.c
 fscache_la_LDFLAGS = $(PLUGIN_LDFLAGS)
 endif
 
+if BUILD_PLUGIN_GCP_METADATA
+pkglib_LTLIBRARIES += gcp_metadata.la
+gcp_metadata_la_SOURCES = src/gcp_metadata.c
+gcp_metadata_la_CPPFLAGS = \
+            $(AM_CPPFLAGS) \
+            $(BUILD_WITH_LIBYAJL_CPPFLAGS) \
+            $(BUILD_WITH_LIBCURL_CFLAGS)
+gcp_metadata_la_LDFLAGS = \
+            $(PLUGIN_LDFLAGS)  \
+            $(BUILD_WITH_LIBYAJL_LDFLAGS)
+gcp_metadata_la_LIBADD = \
+            $(BUILD_WITH_LIBYAJL_LIBS) \
+            $(BUILD_WITH_LIBCURL_LIBS)
+endif
+
 if BUILD_PLUGIN_GMOND
 pkglib_LTLIBRARIES += gmond.la
 gmond_la_SOURCES = src/gmond.c
@@ -2334,4 +2349,3 @@ generic-jmx.jar: $(JAVA_TIMESTAMP_FILE)
 
 jar_DATA = collectd-api.jar generic-jmx.jar
 endif
-

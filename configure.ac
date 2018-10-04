@@ -6390,6 +6390,7 @@ plugin_entropy="no"
 plugin_ethstat="no"
 plugin_fhcount="no"
 plugin_fscache="no"
+plugin_gcp_metadata="no"
 plugin_gps="no"
 plugin_gpu_nvidia="no"
 plugin_grpc="no"
@@ -6496,6 +6497,10 @@ if test "x$ac_system" = "xLinux"; then
     if test "x$with_libmnl" = "xyes"; then
       plugin_connectivity="yes"
     fi
+  fi
+
+  if test "x$with_libcurl" = "xyes" && test "x$with_libyajl" = "xyes"; then
+    plugin_gcp_metadata="yes"
   fi
 
   if test "x$have_pci_regs_h" = "xyes"; then
@@ -6831,6 +6836,7 @@ AC_PLUGIN([exec],                [yes],                       [Execution of exte
 AC_PLUGIN([fhcount],             [$plugin_fhcount],           [File handles statistics])
 AC_PLUGIN([filecount],           [yes],                       [Count files in directories])
 AC_PLUGIN([fscache],             [$plugin_fscache],           [fscache statistics])
+AC_PLUGIN([gcp_metadata],        [$with_libcurl],           [GCP Metadata plugin])
 AC_PLUGIN([gmond],               [$with_libganglia],          [Ganglia plugin])
 AC_PLUGIN([gps],                 [$plugin_gps],               [GPS plugin])
 AC_PLUGIN([gpu_nvidia],          [$with_cuda],                [NVIDIA GPU plugin])
@@ -7264,6 +7270,7 @@ AC_MSG_RESULT([    exec  . . . . . . . . $enable_exec])
 AC_MSG_RESULT([    fhcount . . . . . . . $enable_fhcount])
 AC_MSG_RESULT([    filecount . . . . . . $enable_filecount])
 AC_MSG_RESULT([    fscache . . . . . . . $enable_fscache])
+AC_MSG_RESULT([    gcp_metadata . . . . .$enable_gcp_metadata])
 AC_MSG_RESULT([    gmond . . . . . . . . $enable_gmond])
 AC_MSG_RESULT([    gps . . . . . . . . . $enable_gps])
 AC_MSG_RESULT([    gpu_nvidia  . . . . . $enable_gpu_nvidia])
@@ -7399,4 +7406,3 @@ if test "x$dependency_warning" = "xyes"; then
 fi
 
 # vim: set fdm=marker sw=2 sts=2 ts=2 et :
-

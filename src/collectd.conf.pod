@@ -3174,6 +3174,28 @@ Sets the I<type instance> used to dispatch values. Defaults to an empty string
 The I<GenericJMX plugin> is written in I<Java> and therefore documented in
 L<collectd-java(5)>.
 
+=head2 Plugin C<gcp_metadata>
+
+The I<gcp_metadata> plugin retrieves and parses metadata labels from
+the I<GCP Metadata> server for the GCE instance the plugin is running on,
+and adds specific metadata key value pairs to the collectd internal
+metadata list, where it can be acted upon by a I<write> plugin.
+
+Synopsis:
+
+ <Plugin gcp_metadata>
+   ExtraMetricFields "goobuntu-provisioning-user"
+ </Plugin>
+
+The list of Metadata keys the plugin pays attention to s specified in
+the configuration variable B<ExtraMetricFields>, which should contain
+a comma separated list of Metadata keys. If there is no such
+configuration parameter, the plugin does nothing, and disables
+itself. Otherwise it searches through the set of metadata keys, and
+collects the specified key and value pairs, and adds them to the
+B<collectd> internal metadata list. If none of the keys are found on
+the metadata server list, the I<gcp_metadata> plugin takes no action.
+
 =head2 Plugin C<gmond>
 
 The I<gmond> plugin received the multicast traffic sent by B<gmond>, the
@@ -5615,7 +5637,7 @@ necessary in rare cases.
 
 Set the outgoing IP address for IP packets. This option can be used instead of
 the I<Interface> option to explicitly define the IP address which will be used
-to send Packets to the remote server. 
+to send Packets to the remote server.
 
 =item B<ResolveInterval> I<Seconds>
 
@@ -8736,7 +8758,7 @@ the following schema:
   Bucket  20  50
   Bucket  50   0
 
-Metrics are reported with the I<type> set by B<BucketType> option (C<bucket> 
+Metrics are reported with the I<type> set by B<BucketType> option (C<bucket>
 by default) and the I<type instance>
 C<E<lt>TypeE<gt>[-E<lt>InstanceE<gt>]-E<lt>lower_boundE<gt>_E<lt>upper_boundE<gt>>.
 
