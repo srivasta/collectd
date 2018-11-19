@@ -1657,6 +1657,16 @@ F</proc/sys/net/ipv4/netfilter> instead of F</proc/sys/net/netfilter/>.
 
 =back
 
+=head2 Plugin C<consumption>
+
+The I<consumption plugin> collects fine grained resource consumption
+statistics for processes on the system (looking at system resources
+like CPU ussage, memory consumption, and disk and network
+I/O). Further, consumption can classify the processes into buckets
+(uninteresting, somwhat intresting, and interesting, for example),
+based on configuration, or fall back onto heuristics for
+classification.
+
 =head2 Plugin C<cpu>
 
 The I<CPU plugin> collects CPU usage metrics. By default, CPU usage is reported
@@ -5615,7 +5625,7 @@ necessary in rare cases.
 
 Set the outgoing IP address for IP packets. This option can be used instead of
 the I<Interface> option to explicitly define the IP address which will be used
-to send Packets to the remote server. 
+to send Packets to the remote server.
 
 =item B<ResolveInterval> I<Seconds>
 
@@ -8736,7 +8746,7 @@ the following schema:
   Bucket  20  50
   Bucket  50   0
 
-Metrics are reported with the I<type> set by B<BucketType> option (C<bucket> 
+Metrics are reported with the I<type> set by B<BucketType> option (C<bucket>
 by default) and the I<type instance>
 C<E<lt>TypeE<gt>[-E<lt>InstanceE<gt>]-E<lt>lower_boundE<gt>_E<lt>upper_boundE<gt>>.
 

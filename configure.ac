@@ -6375,6 +6375,7 @@ plugin_ceph="no"
 plugin_cgroups="no"
 plugin_connectivity="no"
 plugin_conntrack="no"
+plugin_consumption="no"
 plugin_contextswitch="no"
 plugin_cpu="no"
 plugin_cpufreq="no"
@@ -6445,6 +6446,7 @@ if test "x$ac_system" = "xLinux"; then
   plugin_battery="yes"
   plugin_cgroups="yes"
   plugin_conntrack="yes"
+  plugin_consumption="yes"
   plugin_contextswitch="yes"
   plugin_cpu="yes"
   plugin_cpufreq="yes"
@@ -6809,6 +6811,7 @@ AC_PLUGIN([chrony],              [yes],                       [Chrony statistics
 AC_PLUGIN([check_uptime],        [yes],                       [Notify about uptime reset])
 AC_PLUGIN([connectivity],        [$plugin_connectivity],      [Network interface up/down events])
 AC_PLUGIN([conntrack],           [$plugin_conntrack],         [nf_conntrack statistics])
+AC_PLUGIN([consumption],         [$plugin_consumption],       [Fine grained resource consumption])
 AC_PLUGIN([contextswitch],       [$plugin_contextswitch],     [context switch statistics])
 AC_PLUGIN([cpu],                 [$plugin_cpu],               [CPU usage statistics])
 AC_PLUGIN([cpufreq],             [$plugin_cpufreq],           [CPU frequency statistics])
@@ -7242,6 +7245,7 @@ AC_MSG_RESULT([    chrony. . . . . . . . $enable_chrony])
 AC_MSG_RESULT([    check_uptime. . . . . $enable_check_uptime])
 AC_MSG_RESULT([    connectivity. . . . . $enable_connectivity])
 AC_MSG_RESULT([    conntrack . . . . . . $enable_conntrack])
+AC_MSG_RESULT([    consumption . . . . . $enable_consumption])
 AC_MSG_RESULT([    contextswitch . . . . $enable_contextswitch])
 AC_MSG_RESULT([    cpu . . . . . . . . . $enable_cpu])
 AC_MSG_RESULT([    cpufreq . . . . . . . $enable_cpufreq])
@@ -7399,4 +7403,3 @@ if test "x$dependency_warning" = "xyes"; then
 fi
 
 # vim: set fdm=marker sw=2 sts=2 ts=2 et :
-

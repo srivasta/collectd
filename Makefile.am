@@ -789,6 +789,13 @@ conntrack_la_SOURCES = src/conntrack.c
 conntrack_la_LDFLAGS = $(PLUGIN_LDFLAGS)
 endif
 
+if BUILD_PLUGIN_CONSUMPTION
+pkglib_LTLIBRARIES += consumption.la
+consumption_la_CPPFLAGS = $(AM_CPPFLAGS)
+consumption_la_SOURCES = src/consumption.cc
+consumption_la_LDFLAGS = $(PLUGIN_LDFLAGS)
+endif
+
 if BUILD_PLUGIN_CONTEXTSWITCH
 pkglib_LTLIBRARIES += contextswitch.la
 contextswitch_la_SOURCES = src/contextswitch.c
