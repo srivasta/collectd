@@ -79,22 +79,30 @@ DEF_TEST(list) {
     CHECK_NOT_NULL(store_p);
 
     for (size_t j = 0; j < STATIC_ARRAY_SIZE(cases[i].labels); ++j) {
+#pragma GCC diagnostic ignored "-Wcast-qual"
       int insert = c_avl_insert(store_p, (void *)cases[i].labels[j].key_p,
                                 (void *)cases[i].labels[j].value_p);
+#pragma GCC diagnostic pop
       EXPECT_EQ_INT(0, insert);
     }
+#pragma GCC diagnostic ignored "-Wcast-qual"
     int retval =
         c_avl_get(store_p, (void *)cases[i].search_key_p, (void **)&retrieve_p);
+#pragma GCC diagnostic pop
     EXPECT_EQ_INT(0, retval);
     EXPECT_EQ_STR(cases[i].result_p, retrieve_p);
 
     retrieve_p = NULL;
+#pragma GCC diagnostic ignored "-Wcast-qual"
     int remove =
         c_avl_remove(store_p, (void *)cases[i].search_key_p, NULL, NULL);
+#pragma GCC diagnostic pop
     EXPECT_EQ_INT(0, remove);
 
+#pragma GCC diagnostic ignored "-Wcast-qual"
     retval =
         c_avl_get(store_p, (void *)cases[i].search_key_p, (void **)&retrieve_p);
+#pragma GCC diagnostic pop
     EXPECT_EQ_INT(-1, retval);
 
     c_avl_destroy(store_p);
@@ -126,6 +134,7 @@ DEF_TEST(identity) {
                                     {"animal4", "dog"},
                                     {"animal5", "zebra"}}};
   struct {
+#pragma GCC diagnostic ignored "-Wdiscarded-qualifiers"
     const char *search_key_p;
     const char *result_p;
     int idx;
@@ -138,6 +147,7 @@ DEF_TEST(identity) {
                 .result_p = labels[1][2].value_p,
                 .idx = 1,
                 .id = {.name = "my-name-2", .root_p = NULL}}};
+#pragma GCC diagnostic pop
 
   for (size_t i = 0; i < STATIC_ARRAY_SIZE(cases); ++i) {
     char *retrieve_p = NULL;
@@ -145,23 +155,31 @@ DEF_TEST(identity) {
         c_avl_create((int (*)(const void *, const void *))strcmp);
     CHECK_NOT_NULL(cases[i].id.root_p);
     for (size_t j = 0; j < STATIC_ARRAY_SIZE(labels[cases[i].idx]); ++j) {
+#pragma GCC diagnostic ignored "-Wcast-qual"
       int insert = c_avl_insert(cases[i].id.root_p,
                                 (void *)labels[cases[i].idx][j].key_p,
                                 (void *)labels[cases[i].idx][j].value_p);
+#pragma GCC diagnostic pop
       EXPECT_EQ_INT(0, insert);
     }
+#pragma GCC diagnostic ignored "-Wcast-qual"
     retval = c_avl_get(cases[i].id.root_p, (void *)cases[i].search_key_p,
                        (void **)&retrieve_p);
+#pragma GCC diagnostic pop
     EXPECT_EQ_INT(0, retval);
     EXPECT_EQ_STR(cases[i].result_p, retrieve_p);
 
     retrieve_p = NULL;
+#pragma GCC diagnostic ignored "-Wcast-qual"
     int remove = c_avl_remove(cases[i].id.root_p, (void *)cases[i].search_key_p,
                               NULL, NULL);
+#pragma GCC diagnostic pop
     EXPECT_EQ_INT(0, remove);
 
+#pragma GCC diagnostic ignored "-Wcast-qual"
     retval = c_avl_get(cases[i].id.root_p, (void *)cases[i].search_key_p,
                        (void **)&retrieve_p);
+#pragma GCC diagnostic pop
     EXPECT_EQ_INT(-1, retval);
 
     c_avl_destroy(cases[i].id.root_p);
@@ -203,6 +221,8 @@ DEF_TEST(metrics) {
        .idx = 0,
        .metric = {.value = {.gauge = NAN},
                   .value_ds_type = DS_TYPE_GAUGE,
+                  .type = "uptime",
+                  .ds_name = "value",
                   .time = 0,
                   .interval = 0,
                   .identity = NULL}},
@@ -211,36 +231,48 @@ DEF_TEST(metrics) {
        .idx = 1,
        .metric = {.value = {.derive = 1000},
                   .value_ds_type = DS_TYPE_DERIVE,
+                  .type = "cpu",
+                  .ds_name = "value",
                   .time = 10,
                   .interval = 0,
                   .identity = NULL}},
   };
   for (size_t i = 0; i < STATIC_ARRAY_SIZE(cases); ++i) {
     char *retrieve_p = NULL;
+#pragma GCC diagnostic ignored "-Wdiscarded-qualifiers"
     identity_t identity = {.name = "TestIdentity", .root_p = NULL};
+#pragma GCC diagnostic pop
     cases[i].metric.identity = &identity;
 
     cases[i].metric.identity->root_p =
         c_avl_create((int (*)(const void *, const void *))strcmp);
     CHECK_NOT_NULL(cases[i].metric.identity->root_p);
     for (size_t j = 0; j < STATIC_ARRAY_SIZE(labels[cases[i].idx]); ++j) {
+#pragma GCC diagnostic ignored "-Wcast-qual"
       int insert = c_avl_insert(cases[i].metric.identity->root_p,
                                 (void *)labels[cases[i].idx][j].key_p,
                                 (void *)labels[cases[i].idx][j].value_p);
+#pragma GCC diagnostic pop
       EXPECT_EQ_INT(0, insert);
     }
+#pragma GCC diagnostic ignored "-Wcast-qual"
     retval = c_avl_get(cases[i].metric.identity->root_p,
                        (void *)cases[i].search_key_p, (void **)&retrieve_p);
+#pragma GCC diagnostic pop
     EXPECT_EQ_INT(0, retval);
     EXPECT_EQ_STR(cases[i].result_p, retrieve_p);
 
     retrieve_p = NULL;
+#pragma GCC diagnostic ignored "-Wcast-qual"
     int remove = c_avl_remove(cases[i].metric.identity->root_p,
                               (void *)cases[i].search_key_p, NULL, NULL);
+#pragma GCC diagnostic pop
     EXPECT_EQ_INT(0, remove);
 
+#pragma GCC diagnostic ignored "-Wcast-qual"
     retval = c_avl_get(cases[i].metric.identity->root_p,
                        (void *)cases[i].search_key_p, (void **)&retrieve_p);
+#pragma GCC diagnostic pop
     EXPECT_EQ_INT(-1, retval);
 
     c_avl_destroy(cases[i].metric.identity->root_p);
