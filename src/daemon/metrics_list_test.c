@@ -26,14 +26,22 @@
  */
 
 /* Code: */
+#define _GNU_SOURCE
+#include <dlfcn.h>
+#include <pthread.h>
+#include "plugin.c"
+
 #include "testing.h"
 
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "config.h"
+#include "globals.h"
+#include "types_list.h"
 
 #include "utils/avltree/avltree.h"
 #include "utils/common/common.h" /* for STATIC_ARRAY_SIZE */
@@ -225,6 +233,7 @@ DEF_TEST(metrics) {
                   .ds_name = "value",
                   .time = 0,
                   .interval = 0,
+                  .meta = NULL,
                   .identity = NULL}},
       {.search_key_p = labels[1][2].key_p,
        .result_p = labels[1][2].value_p,
@@ -235,6 +244,7 @@ DEF_TEST(metrics) {
                   .ds_name = "value",
                   .time = 10,
                   .interval = 0,
+                  .meta = NULL,
                   .identity = NULL}},
   };
   for (size_t i = 0; i < STATIC_ARRAY_SIZE(cases); ++i) {
@@ -281,11 +291,135 @@ DEF_TEST(metrics) {
   return 0;
 }
 
+/**
+ * @brief      This test validates conversion from valu_liat_t to metrics_t
+ *
+ * @details Takes avlue_lisat_t structure containing a complext metric type with
+ *          more than one value and xreates a metrics_list list
+ *
+ * @return     int This returns 0 on success, and non-zero on failures
+ */
+DEF_TEST(convert) {
+  value_t network_metric_values[] = {
+      {.derive = 120},
+      {.derive = 19},
+  };
+  value_t load_metric_values[] = {
+      {.gauge = 1},
+      {.gauge = 9},
+      {.gauge = 19},
+  };
+  const char *network_metric_subtypes[] = {
+      "rx",
+      "tx",
+  };
+  const char *network_metric_name[] = {
+      "interface/if_octets/rx",
+      "interface/if_octets/tx",
+  };
+  const char *load_metric_subtypes[] = {"shortterm", "midterm", "longterm"};
+  const char *load_metric_name[] = {
+      "load/load/shortterm",
+      "load/load/midterm",
+      "load/load/longterm",
+  };
+  struct {
+    const char *host_expected;
+    const char *plugin_expected;
+    const char *type_expected;
+    const char **name_expected;
+    const char **subtypes_expected;
+    const unsigned int subtypes_num;
+    struct value_list_s metric_value;
+  } cases[] = {
+      {.subtypes_num = STATIC_ARRAY_SIZE(network_metric_values),
+       .host_expected = "example.com",
+       .plugin_expected = "interface",
+       .type_expected = "if_octets",
+       .name_expected = &network_metric_name[0],
+       .subtypes_expected = &network_metric_subtypes[0],
+       .metric_value =
+           {
+               .values = &network_metric_values[0],
+               .values_len = STATIC_ARRAY_SIZE(network_metric_values),
+               .time = TIME_T_TO_CDTIME_T_STATIC(1480063672),
+               .interval = TIME_T_TO_CDTIME_T_STATIC(10),
+               .host = "example.com",
+               .plugin = "interface",
+               .type = "if_octets",
+           }},
+      {.subtypes_num = STATIC_ARRAY_SIZE(load_metric_values),
+       .host_expected = "example1.com",
+       .plugin_expected = "load",
+       .type_expected = "load",
+       .name_expected = &load_metric_name[0],
+       .subtypes_expected = &load_metric_subtypes[0],
+       .metric_value =
+           {
+               .values = &load_metric_values[0],
+               .values_len = STATIC_ARRAY_SIZE(load_metric_values),
+               .time = TIME_T_TO_CDTIME_T_STATIC(1480063672),
+               .interval = TIME_T_TO_CDTIME_T_STATIC(10),
+               .host = "example1.com",
+               .plugin = "load",
+               .type = "load",
+           }},
+  };
+
+  for (size_t i = 0; i < STATIC_ARRAY_SIZE(cases); ++i) {
+    int retval = 0;
+    char *host_p = NULL;
+    metrics_list_t *ml = NULL;
+    metrics_list_t *index_p = NULL;
+    CHECK_ZERO(plugin_convert_values_to_metrics(&cases[i].metric_value, &ml));
+
+    index_p = ml;
+    EXPECT_EQ_STR(index_p->metric.type, cases[i].type_expected);
+
+    retval = c_avl_get(index_p->metric.identity->root_p, (void *)"_host",
+                       (void **)&host_p);
+    EXPECT_EQ_INT(0, retval);
+    EXPECT_EQ_STR(cases[i].metric_value.host, host_p);
+
+    for (unsigned int j = 0; j < cases[i].subtypes_num; ++j) {
+      EXPECT_EQ_STR(index_p->metric.ds_name, cases[i].subtypes_expected[j]);
+      EXPECT_EQ_STR(index_p->metric.identity->name, cases[i].name_expected[j]);
+      index_p = index_p->next_p;
+    }
+    destroy_metrics_list(ml);
+  }
+  return 0;
+}
+
 int main(void) {
   RUN_TEST(list);
   RUN_TEST(identity);
   RUN_TEST(metrics);
+  const char *types_database = "src/types.db";
+  if (access(types_database, R_OK) == -1) {
+    types_database = "types.db";
+    if (access(types_database, R_OK) == -1) {
+      types_database = NULL;
+    }
+  }
+  if (types_database != NULL) {
+    if (read_types_list(types_database) == 0) {
 
+#if COLLECT_DEBUG
+      c_avl_iterator_t *iter_p = c_avl_get_iterator(data_sets);
+      if (iter_p != NULL) {
+        char *key_p = NULL;
+        char *value_p = NULL;
+        while ((c_avl_iterator_next(iter_p, (void **)&key_p,
+                                    (void **)&value_p)) == 0) {
+          ERROR("\"%s\"", key_p);
+        }
+      }
+      c_avl_iterator_destroy(iter_p);
+#endif
+      RUN_TEST(convert);
+    }
+  }
   END_TEST;
 }
 
