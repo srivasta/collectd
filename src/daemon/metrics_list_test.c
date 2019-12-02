@@ -252,10 +252,8 @@ DEF_TEST(metrics) {
 #pragma GCC diagnostic ignored "-Wdiscarded-qualifiers"
     identity_t identity = {.name = "TestIdentity", .root_p = NULL};
 #pragma GCC diagnostic pop
-    cases[i].metric.identity = &identity;
+    cases[i].metric.identity = clone_identity(&identity);
 
-    cases[i].metric.identity->root_p =
-        c_avl_create((int (*)(const void *, const void *))strcmp);
     CHECK_NOT_NULL(cases[i].metric.identity->root_p);
     for (size_t j = 0; j < STATIC_ARRAY_SIZE(labels[cases[i].idx]); ++j) {
 #pragma GCC diagnostic ignored "-Wcast-qual"
@@ -272,6 +270,10 @@ DEF_TEST(metrics) {
     EXPECT_EQ_INT(0, retval);
     EXPECT_EQ_STR(cases[i].result_p, retrieve_p);
 
+    metric_t *cloned_metric = plugin_metric_clone(&cases[i].metric);
+    CHECK_NOT_NULL(cloned_metric);
+    plugin_metric_free(cloned_metric);
+
     retrieve_p = NULL;
 #pragma GCC diagnostic ignored "-Wcast-qual"
     int remove = c_avl_remove(cases[i].metric.identity->root_p,
@@ -287,6 +289,7 @@ DEF_TEST(metrics) {
 
     c_avl_destroy(cases[i].metric.identity->root_p);
     cases[i].metric.identity->root_p = NULL;
+    destroy_identity(cases[i].metric.identity);
   }
   return 0;
 }
