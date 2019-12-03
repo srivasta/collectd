@@ -295,10 +295,10 @@ DEF_TEST(metrics) {
 }
 
 /**
- * @brief      This test validates conversion from valu_liat_t to metrics_t
+ * @brief      This test validates conversion from value_list_t to metrics_t
  *
- * @details Takes avlue_lisat_t structure containing a complext metric type with
- *          more than one value and xreates a metrics_list list
+ * @details Takes value_list_t structure containing a complext metric type with
+ *          more than one value and creates a metrics_list list
  *
  * @return     int This returns 0 on success, and non-zero on failures
  */
@@ -394,6 +394,74 @@ DEF_TEST(convert) {
   return 0;
 }
 
+/**
+ * @brief   his test validates enqueuing and dequeuing metrics from the write queue
+ *
+ *
+ * @details Takes value_list_t structure containing a complex metric type with
+ *          more than one value and adds it to the write queue, emulating a read
+ *          plugin, converting it into metrics_t type objects on the fly. Then
+ *          it dequeues the resulting metrics_t objects, in the manner write
+ *          plugins would.
+ *
+ * @return     int This returns 0 on success, and non-zero on failures
+ */
+DEF_TEST(queue) {
+  value_t network_metric_values[] = {
+      {.derive = 120},
+      {.derive = 19},
+  };
+  value_t load_metric_values[] = {
+      {.gauge = 1},
+      {.gauge = 9},
+      {.gauge = 19},
+  };
+
+  struct {
+    struct value_list_s metric_value;
+  } cases[] = {
+      {.metric_value =
+           {
+               .values = &network_metric_values[0],
+               .values_len = STATIC_ARRAY_SIZE(network_metric_values),
+               .time = TIME_T_TO_CDTIME_T_STATIC(1480063672),
+               .interval = TIME_T_TO_CDTIME_T_STATIC(10),
+               .host = "example.com",
+               .plugin = "interface",
+               .type = "if_octets",
+           }},
+      {.metric_value =
+           {
+               .values = &load_metric_values[0],
+               .values_len = STATIC_ARRAY_SIZE(load_metric_values),
+               .time = TIME_T_TO_CDTIME_T_STATIC(1480063672),
+               .interval = TIME_T_TO_CDTIME_T_STATIC(10),
+               .host = "example1.com",
+               .plugin = "load",
+               .type = "load",
+           }},
+  };
+  plugin_init_ctx();
+  for (size_t i = 0; i < STATIC_ARRAY_SIZE(cases); ++i) {
+    CHECK_ZERO(plugin_dispatch_values(&cases[i].metric_value));
+  }
+
+  /* Check one metric */
+  metric_t *metric_p = NULL;
+  metric_p = plugin_write_dequeue();
+  CHECK_NOT_NULL(metric_p);
+  EXPECT_EQ_INT(TIME_T_TO_CDTIME_T_STATIC(1480063672), metric_p->time);
+  EXPECT_EQ_INT(TIME_T_TO_CDTIME_T_STATIC(10), metric_p->interval);
+  CHECK_NOT_NULL(metric_p->identity);
+  plugin_metric_free(metric_p);
+
+  start_write_threads(2);
+  usleep(1000);
+  stop_write_threads();
+
+  return 0;
+}
+
 int main(void) {
   RUN_TEST(list);
   RUN_TEST(identity);
@@ -421,6 +489,7 @@ int main(void) {
       c_avl_iterator_destroy(iter_p);
 #endif
       RUN_TEST(convert);
+      RUN_TEST(queue);
     }
   }
   END_TEST;
