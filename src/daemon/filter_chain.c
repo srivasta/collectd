@@ -512,8 +512,7 @@ static int fc_bit_jump_destroy(void **user_data) /* {{{ */
   return 0;
 } /* }}} int fc_bit_jump_destroy */
 
-static int fc_bit_jump_invoke(const data_set_t *ds, /* {{{ */
-                              value_list_t *vl,
+static int fc_bit_jump_invoke(metric_t *metric_p,
                               notification_meta_t __attribute__((unused)) *
                                   *meta,
                               void **user_data) {
@@ -534,7 +533,7 @@ static int fc_bit_jump_invoke(const data_set_t *ds, /* {{{ */
     return -1;
   }
 
-  status = fc_process_chain(ds, vl, chain);
+  status = fc_process_chain(metric_p, chain);
   if (status < 0)
     return status;
   else if (status == FC_TARGET_STOP)
@@ -544,16 +543,14 @@ static int fc_bit_jump_invoke(const data_set_t *ds, /* {{{ */
 } /* }}} int fc_bit_jump_invoke */
 
 static int
-fc_bit_stop_invoke(const data_set_t __attribute__((unused)) * ds, /* {{{ */
-                   value_list_t __attribute__((unused)) * vl,
+fc_bit_stop_invoke(metric_t __attribute__((unused)) * metric_p,
                    notification_meta_t __attribute__((unused)) * *meta,
                    void __attribute__((unused)) * *user_data) {
   return FC_TARGET_STOP;
 } /* }}} int fc_bit_stop_invoke */
 
 static int
-fc_bit_return_invoke(const data_set_t __attribute__((unused)) * ds, /* {{{ */
-                     value_list_t __attribute__((unused)) * vl,
+fc_bit_return_invoke(metric_t __attribute__((unused)) * metric_p,
                      notification_meta_t __attribute__((unused)) * *meta,
                      void __attribute__((unused)) * *user_data) {
   return FC_TARGET_RETURN;
@@ -625,8 +622,7 @@ static int fc_bit_write_destroy(void **user_data) /* {{{ */
   return 0;
 } /* }}} int fc_bit_write_destroy */
 
-static int fc_bit_write_invoke(const data_set_t *ds, /* {{{ */
-                               value_list_t *vl,
+static int fc_bit_write_invoke(metric_t *metric_p,
                                notification_meta_t __attribute__((unused)) *
                                    *meta,
                                void **user_data) {
@@ -640,7 +636,7 @@ static int fc_bit_write_invoke(const data_set_t *ds, /* {{{ */
   if ((plugin_list == NULL) || (plugin_list[0].plugin == NULL)) {
     static c_complain_t write_complaint = C_COMPLAIN_INIT_STATIC;
 
-    status = plugin_write(/* plugin = */ NULL, ds, vl);
+    status = plugin_write(/* plugin = */ NULL, metric_p);
     if (status == ENOENT) {
       /* in most cases this is a permanent error, so use the complain
        * mechanism rather than spamming the logs */
@@ -669,7 +665,7 @@ static int fc_bit_write_invoke(const data_set_t *ds, /* {{{ */
     }
   } else {
     for (size_t i = 0; plugin_list[i].plugin != NULL; i++) {
-      status = plugin_write(plugin_list[i].plugin, ds, vl);
+      status = plugin_write(plugin_list[i].plugin, metric_p);
       if (status != 0) {
         c_complain(
             LOG_INFO, &plugin_list[i].complaint,
@@ -799,7 +795,7 @@ fc_chain_t *fc_chain_get_by_name(const char *chain_name) /* {{{ */
   return NULL;
 } /* }}} int fc_chain_get_by_name */
 
-int fc_process_chain(const data_set_t *ds, value_list_t *vl, /* {{{ */
+int fc_process_chain(metric_t *metric_p, /* {{{ */
                      fc_chain_t *chain) {
   fc_target_t *target;
   int status = FC_TARGET_CONTINUE;
@@ -822,7 +818,7 @@ int fc_process_chain(const data_set_t *ds, value_list_t *vl, /* {{{ */
     for (match = rule->matches; match != NULL; match = match->next) {
       /* FIXME: Pass the meta-data to match targets here (when implemented). */
       status =
-          (*match->proc.match)(ds, vl, /* meta = */ NULL, &match->user_data);
+          (*match->proc.match)(metric_p, /* meta = */ NULL, &match->user_data);
       if (status < 0) {
         WARNING("fc_process_chain (%s): A match failed.", chain->name);
         break;
@@ -846,7 +842,7 @@ int fc_process_chain(const data_set_t *ds, value_list_t *vl, /* {{{ */
        * target. */
       /* FIXME: Pass the meta-data to match targets here (when implemented). */
       status =
-          (*target->proc.invoke)(ds, vl, /* meta = */ NULL, &target->user_data);
+          (*target->proc.invoke)(metric_p, /* meta = */ NULL, &target->user_data);
       if (status < 0) {
         WARNING("fc_process_chain (%s): A target failed.", chain->name);
         continue;
@@ -885,7 +881,7 @@ int fc_process_chain(const data_set_t *ds, value_list_t *vl, /* {{{ */
      * target. */
     /* FIXME: Pass the meta-data to match targets here (when implemented). */
     status =
-        (*target->proc.invoke)(ds, vl, /* meta = */ NULL, &target->user_data);
+        (*target->proc.invoke)(metric_p, /* meta = */ NULL, &target->user_data);
     if (status < 0) {
       WARNING("fc_process_chain (%s): The default target failed.", chain->name);
     } else if (status == FC_TARGET_CONTINUE)
@@ -921,10 +917,10 @@ int fc_process_chain(const data_set_t *ds, value_list_t *vl, /* {{{ */
 
 /* Iterate over all rules in the chain and execute all targets for which all
  * matches match. */
-int fc_default_action(const data_set_t *ds, value_list_t *vl) /* {{{ */
+int fc_default_action(metric_t *metric_p) /* {{{ */
 {
   /* FIXME: Pass the meta-data to match targets here (when implemented). */
-  return fc_bit_write_invoke(ds, vl, NULL, NULL);
+  return fc_bit_write_invoke(metric_p, NULL, NULL);
 } /* }}} int fc_default_action */
 
 int fc_configure(const oconfig_item_t *ci) /* {{{ */

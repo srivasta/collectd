@@ -66,7 +66,7 @@ static int value_list_to_string(char *buffer, int buffer_len,
                         vl->values[i].gauge);
     } else if (store_rates != 0) {
       if (rates == NULL)
-        rates = uc_get_rate(ds, vl);
+        rates = uc_get_rate_vl(ds, vl);
       if (rates == NULL) {
         WARNING("csv plugin: "
                 "uc_get_rate failed.");

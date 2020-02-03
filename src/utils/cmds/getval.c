@@ -61,8 +61,8 @@ cmd_status_t cmd_parse_getval(size_t argc, char **argv,
 
   status = parse_identifier(
       argv[0], &ret_getval->identifier.host, &ret_getval->identifier.plugin,
-      &ret_getval->identifier.plugin_instance, &ret_getval->identifier.type,
-      &ret_getval->identifier.type_instance, opts->identifier_default_host);
+      &ret_getval->identifier.type, &ret_getval->identifier.data_source,
+      opts->identifier_default_host);
   if (status != 0) {
     DEBUG("cmd_parse_getval: Cannot parse identifier `%s'.", identifier_copy);
     cmd_error(CMD_PARSE_ERROR, err, "Cannot parse identifier `%s'.",
@@ -90,8 +90,7 @@ cmd_status_t cmd_handle_getval(FILE *fh, char *buffer) {
   cmd_status_t status;
   cmd_t cmd;
 
-  gauge_t *values;
-  size_t values_num;
+  gauge_t value;
 
   const data_set_t *ds;
 
@@ -120,38 +119,21 @@ cmd_status_t cmd_handle_getval(FILE *fh, char *buffer) {
     return -1;
   }
 
-  values = NULL;
-  values_num = 0;
-  status =
-      uc_get_rate_by_name(cmd.cmd.getval.raw_identifier, &values, &values_num);
+  status = uc_get_rate_by_name(cmd.cmd.getval.raw_identifier, &value);
   if (status != 0) {
     cmd_error(CMD_ERROR, &err, "No such value.");
     cmd_destroy(&cmd);
     return CMD_ERROR;
   }
 
-  if (ds->ds_num != values_num) {
-    ERROR("ds[%s]->ds_num = %" PRIsz ", "
-          "but uc_get_rate_by_name returned %" PRIsz " values.",
-          ds->type, ds->ds_num, values_num);
-    cmd_error(CMD_ERROR, &err, "Error reading value from cache.");
-    sfree(values);
-    cmd_destroy(&cmd);
-    return CMD_ERROR;
+  print_to_socket(fh, "Value found\n");
+  print_to_socket(fh, "%s=", cmd.cmd.getval.identifier.data_source);
+  if (isnan(value)) {
+    print_to_socket(fh, "NaN\n");
+  } else {
+    print_to_socket(fh, "%12e\n", value);
   }
 
-  print_to_socket(fh, "%" PRIsz " Value%s found\n", values_num,
-                  (values_num == 1) ? "" : "s");
-  for (size_t i = 0; i < values_num; i++) {
-    print_to_socket(fh, "%s=", ds->ds[i].name);
-    if (isnan(values[i])) {
-      print_to_socket(fh, "NaN\n");
-    } else {
-      print_to_socket(fh, "%12e\n", values[i]);
-    }
-  }
-
-  sfree(values);
   cmd_destroy(&cmd);
 
   return CMD_OK;

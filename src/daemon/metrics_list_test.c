@@ -230,9 +230,10 @@ DEF_TEST(metrics) {
        .metric = {.value = {.gauge = NAN},
                   .value_ds_type = DS_TYPE_GAUGE,
                   .type = "uptime",
-                  .ds_name = "value",
+		  .plugin = "test",
                   .time = 0,
                   .interval = 0,
+		  .ds = NULL;
                   .meta = NULL,
                   .identity = NULL}},
       {.search_key_p = labels[1][2].key_p,
@@ -241,9 +242,10 @@ DEF_TEST(metrics) {
        .metric = {.value = {.derive = 1000},
                   .value_ds_type = DS_TYPE_DERIVE,
                   .type = "cpu",
-                  .ds_name = "value",
+                  .plugin = "test",
                   .time = 10,
                   .interval = 0,
+		  .ds = NULL;
                   .meta = NULL,
                   .identity = NULL}},
   };
@@ -379,13 +381,13 @@ DEF_TEST(convert) {
     index_p = ml;
     EXPECT_EQ_STR(index_p->metric.type, cases[i].type_expected);
 
-    retval = c_avl_get(index_p->metric.identity->root_p, (void *)"_host",
+    retval = c_avl_get(index_p->metric.identity->root_p, (void *)"__host__",
                        (void **)&host_p);
     EXPECT_EQ_INT(0, retval);
     EXPECT_EQ_STR(cases[i].metric_value.host, host_p);
 
     for (unsigned int j = 0; j < cases[i].subtypes_num; ++j) {
-      EXPECT_EQ_STR(index_p->metric.ds_name, cases[i].subtypes_expected[j]);
+      EXPECT_EQ_STR(index_p->metric.ds->name, cases[i].subtypes_expected[j]);
       EXPECT_EQ_STR(index_p->metric.identity->name, cases[i].name_expected[j]);
       index_p = index_p->next_p;
     }
